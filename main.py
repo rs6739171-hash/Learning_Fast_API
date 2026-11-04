@@ -1,44 +1,41 @@
-from fastapi import FastAPI, HTTPException, Path, Query
-from pydantic import BaseModel, field_validator, computed_field, Field, EmailStr
-import json
+from typing import Any
+from fastapi import FastAPI, HTTPException,status
+from schemas_fields import ProductCreate,ProductRead,ProductUpdate,ProductStatus
+from database import Database
 
+db = Database()
 app = FastAPI()
 
-class Student(BaseModel):
-    id      : str = Field(..., examples=["S001"])
-    name    : str = Field(..., min_length=2,max_length=50)
-    age     : int = Field(...,gt=1,le=100)
-    course  : str = Field(...,max_length=50)
-    marks   : int = Field(...,ge=0,le=100)
-    email   : EmailStr
+@app.get("/product",response_model = ProductRead)
+def get_product(id:int)->dict:
 
-    # Custom rules name must contain only letters and spaces
-    @field_validator("name")
-    @classmethod
-    def check_name(cls,value):
-        if not value.replace(" ","").isalpha():
-            raise ValueError("Name must contains only letters and spaces")
+    product = db.get(id)
+    if product is None:
+        raise HTTPException(
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Product with the given ID not found!",
+        )
 
-        return value.title()
+    return product
 
-    @computed_field
-    @property
-    def grade(self):
-        if self.marks >=90:
-            return "A+"
+@app.post("/product")
+def create_product(data:ProductCreate)->dict[str,Any]:
+    new_id = db.create(data)
+    return {"id":new_id}
 
-        elif self.marks >=80:
-            return "A"
 
-        elif self.marks >= 70:
-            return "B"
-        
-        elif self.marks >=60:
-            return "C"
+@app.patch("/product", response_model=ProductRead)
+def update_product(id: int,body:ProductUpdate)->dict[str,Any]:
+    updated = db.update(id,body)
+    if updated is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail = "Product with the given id was not found!"
+        )
+    return updated
 
-        else:
-            return "F"
+@app.delete("/product")
+def delete_product(id: int) -> dict[str, str]:
+    db.delete(id)
 
-@app.post('/create', status_code = 201)
-def create_student(student:Student):
-    pass
+    return {"detail":f"Deleted the product with ID{id}"}
