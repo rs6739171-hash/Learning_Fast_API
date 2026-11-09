@@ -1,6 +1,6 @@
 import random
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 
 
@@ -39,18 +39,15 @@ class ProductCreate(BaseModel):
     name: str = Field(min_length=3, max_length=100)
     price: float = Field(gt=0)
     stock: int = Field(ge=0)
-    supplier: Supplier                 # a model INSIDE a model
-    tags: list[str] = []               # a list of strings
 
 
-example = ProductCreate(
-    name="Wireless Mouse",
-    price=18.99,
-    stock=42,
-    supplier={"name": "Asadullah AI", "email": "asadullah@gmail.pk"},
-    tags=["mouse", "wireless"],
-)
-print(example.model_dump())
+if __name__ == "__main__":
+    example = ProductCreate(
+        name="Wireless Mouse",
+        price=18.99,
+        stock=42,
+    )
+    print(example.model_dump())
 
 
 class ProductStatus(str, Enum):
@@ -60,6 +57,7 @@ class ProductStatus(str, Enum):
     discontinued = "discontinued"
 
 class BaseProduct(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     name: str = Field(description="Product title", min_length=3, max_length=100)
     price: float = Field(description="Price in US dollars", gt=0, le=10_000)
     stock: int = Field(description="Units available", ge=0)
@@ -78,5 +76,7 @@ class ProductUpdate(BaseModel):
     warehouse: int | None = Field(default=None, ge=1, le=5)
     status: ProductStatus | None = Field(default=None)
 
+
 class ProductRead(BaseProduct):
-    pass
+    id: int | None = None
+    status: ProductStatus | None = None
