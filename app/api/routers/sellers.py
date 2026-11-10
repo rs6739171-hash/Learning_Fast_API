@@ -1,3 +1,5 @@
+from redis import RedisError
+from app.database.redis import add_jti_to_blacklist
 from app.api.dependencies import SessionDep
 from app.api.dependencies import get_access_token
 from app.database.models import Seller
@@ -24,6 +26,12 @@ async def login(service: SellerDep, request_form: OAuth2PasswordRequestForm = De
     token = await service.login(request_form.username, request_form.password)
     return {"access_token": token, "token_type": "bearer"}
 
-@router.get("/logout", response_model=Seller)
-async def logout(seller:Annotated[dict,Depends(get_access_token)],session:SessionDep) -> Seller:
-    return seller
+@router.get("/logout")
+async def logout_seller(token_data:Annotated[dict,Depends(get_access_token)]):
+    jti=token_data["jti"]
+    try:
+        await add_jti_to_blacklist(jti)
+    except RedisError:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,detail="Blacklist service is not available")
+
+    return {"details":"Successfully Logged Out"}

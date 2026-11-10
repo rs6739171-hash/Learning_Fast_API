@@ -17,6 +17,7 @@ class DatasSettings(BaseSettings):
     POSTGRES_SERVER: str
     POSTGRES_PORT: int
     POSTGRES_DB: str
+    REDIS_URL:str
 
     @property
     def POSTGRES_URL(self) -> str:

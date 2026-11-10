@@ -1,3 +1,4 @@
+from app.database.redis import is_jti_blacklisted
 from app.database.models import Seller
 from app.core.security import oauth2_scheme
 from fastapi import status
@@ -18,7 +19,7 @@ def get_product_service(session: SessionDep) -> ProductService:
 
 async def get_access_token(token:Annotated[str,Depends(oauth2_scheme)])-> dict:
     data = decode_access_token(token)
-    if data is None:
+    if data is None or await is_jti_blacklisted(data["jti"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Token"
