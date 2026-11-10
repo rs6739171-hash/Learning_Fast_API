@@ -1,8 +1,14 @@
 from pathlib import Path
 from urllib.parse import quote_plus
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+_base_config = SettingsConfigDict(
+        env_file=BASE_DIR / ".env",
+        env_ignore_empty=True,
+        extra="ignore",
+    )
 
 
 class DatasSettings(BaseSettings):
@@ -20,14 +26,22 @@ class DatasSettings(BaseSettings):
             f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 
-    model_config = SettingsConfigDict(
-        env_file=BASE_DIR / ".env",
-        env_ignore_empty=True,
-        extra="ignore",
-    )
+    model_config=_base_config
 
 
-settings = DatasSettings()
+class SecuritySettings(BaseSettings):
+    JWT_SECRET: str = Field(validation_alias=AliasChoices("JWT_SECRET", "SECRET_KEY"))
+    JWT_ALGORITHM: str = Field(validation_alias=AliasChoices("JWT_ALGORITHM", "ALGORITHM"))
+
+    model_config = _base_config
+
+
+
+db_settings = DatasSettings()
+security_settings = SecuritySettings()
+settings = db_settings
 
 if __name__ == "__main__":
-    print(settings.model_dump())
+    print(db_settings.model_dump())
+    print(security_settings.model_dump())
+    print(db_settings.POSTGRES_URL)

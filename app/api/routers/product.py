@@ -1,3 +1,4 @@
+from app.api.dependencies import SellerDep
 from app.api.dependencies import ProductDep
 from app.api.schema.schemas_fields import ProductRead, ProductUpdate, ProductCreate
 from fastapi import HTTPException
@@ -19,13 +20,13 @@ async def get_product(id: int, service: ProductDep):
 
 
 @router.post("/")
-async def create_product(product: ProductCreate, service: ProductDep) -> ProductRead:
+async def create_product(product: ProductCreate,_:SellerDep, service: ProductDep) -> ProductRead:
     # return type = schema, so response_model is not needed
     return await service.add(product)
 
 
 @router.patch("/", response_model=ProductRead)
-async def update_product(id: int, product_update: ProductUpdate, service: ProductDep):
+async def update_product(id: int, product_update: ProductUpdate,_:SellerDep, service: ProductDep):
     update = product_update.model_dump(exclude_none=True)
     if not update:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "No data provided to update")
@@ -38,7 +39,7 @@ async def update_product(id: int, product_update: ProductUpdate, service: Produc
 
 
 @router.delete("/")
-async def delete_product(id: int, service: ProductDep) -> dict[str, str]:
+async def delete_product(id: int,_:SellerDep, service: ProductDep) -> dict[str, str]:
     if not await service.delete(id):
         raise not_found()
     return {"detail": f"Product with id #{id} is deleted!"}

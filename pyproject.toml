@@ -13,12 +13,16 @@ dependencies = [
     "fastapi[standard]>=0.162.0",
     "passlib[bcrypt]>=1.7.4",
     "pydantic[email]>=2.14.1",
+    "pyjwt>=2.15.1",
     "sqlalchemy[asyncio]>=2.1.8",
     "sqlmodel>=0.0.48",
 ]
 
 [project.scripts]
 learning-fast-api = "learning_fast_api:main"
+
+[tool.fastapi]
+entrypoint = "app.main:app"
 
 [build-system]
 requires = ["uv_build>=0.12.1,<0.13.0"]
