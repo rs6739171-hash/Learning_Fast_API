@@ -1,6 +1,7 @@
 from datetime import timedelta
 from datetime import timezone
 from datetime import datetime
+from sqlmodel import select
 from app.api.schema.schemas_fields import ProductStatus
 from app.api.schema.schemas_fields import ProductCreate
 from app.models import Product

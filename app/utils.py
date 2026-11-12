@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from uuid import uuid4
 import uuid
 from datetime import datetime
@@ -6,11 +7,13 @@ from datetime import timezone
 from app.config import security_settings as st
 import jwt
 
-def generate_access_token(data:dict,expiry:timedelta=timedelta(days=1)):
+def generate_access_token(data:dict,expiry:timedelta=timedelta(minutes=30)):
+    jti = str(uuid4())
     return jwt.encode(
             payload={
                 **data,
-                "jwt":str(uuid4()),
+                "jti": jti,
+                "jwt": jti,
                 "exp":datetime.now(timezone.utc) + expiry
             },
             algorithm= st.JWT_ALGORITHM,
@@ -24,5 +27,10 @@ def decode_access_token(token:str)->dict | None:
             algorithms=[st.JWT_ALGORITHM],
             key=st.JWT_SECRET
         )
+    except  jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code = 401,
+            detail= "Expired Token"
+   )     
     except jwt.PyJWTError:
         return None

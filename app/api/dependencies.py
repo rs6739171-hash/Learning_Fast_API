@@ -17,26 +17,27 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 def get_product_service(session: SessionDep) -> ProductService:
     return ProductService(session)
 
+ProductDep = Annotated[ProductService, Depends(get_product_service)]
+
 async def get_access_token(token:Annotated[str,Depends(oauth2_scheme)])-> dict:
     data = decode_access_token(token)
-    if data is None or await is_jti_blacklisted(data["jti"]):
+    jti = data.get("jti") or data.get("jwt") if data else None
+    if data is None or not jti or await is_jti_blacklisted(jti):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Token"
         )
     return data
 
-# Get looged in seller
-async def get_current_seller(token_data:Annotated[dict,Depends(get_access_token)],session:SessionDep) -> Seller:
-    user_id = token_data.get("user", {}).get("id") or token_data.get("user", {}).get("email")
-    seller = await session.get(Seller, user_id)
-    return seller
-
-ProductDep = Annotated[ProductService, Depends(get_product_service)]
-
-
 def get_seller_service(session: SessionDep) -> SellerService:
     return SellerService(session)
 
 
 SellerDep = Annotated[SellerService, Depends(get_seller_service)]
+
+
+# Get logged in seller
+async def get_current_seller(token_data: Annotated[dict, Depends(get_access_token)], service: SellerDep) -> Seller:
+    user_id = token_data.get("user", {}).get("id") or token_data.get("user", {}).get("email")
+    seller = await service.get(user_id)
+    return seller
